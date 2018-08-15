@@ -68,15 +68,54 @@ def rotateCube(axis, angle=90):
         for name, comp in cube.items():
             comp.rotate(angle=radians(3),axis=axis, origin=vector(0,0,0))
 
-def R():
+def rotation(layer_name, axis):
     global layers, axes, cube, center_loc
-    rotateLayer(layers["R"], -axes["x"])
-    return recalculateLayers()
-    
+    ax = ""
+    if(len(axis)==1):
+        ax = axes[axis]
+    else:
+        if axis[0]=='-':
+           ax = -axes[axis[1]]
+        else:
+            ax = axes[axis[1]]
+    rotateLayer(layers[layer_name], ax)
+    layers = recalculateLayers()
+
 def U():
-    global layers, axes, cube, center_loc
-    rotateLayer(layers["U"], -axes["y"])
-    return recalculateLayers()
+    rotation("U", "-y")
+
+def U_():
+    rotation("U", "y")
+
+def D():
+    rotation("D", "y")
+
+def D_():
+    rotation("D", "-y")
+
+def R():
+    rotation("R", "-x")
+
+def R_():
+    rotation("R", "x")
+
+def L():
+    rotation("L", "x")
+
+def L_():
+    rotation("L", "-x")
+
+def F():
+    rotation("F", "-z")
+
+def F_():
+    rotation("F", "z")
+
+def B():
+    rotation("B", "-z")
+
+def B_():
+    rotation("B", "z")
 
 def generateCube(cubelet_size):
     #centers
@@ -260,16 +299,29 @@ if __name__=="__main__":
                     showBack()
         else:
             if ev.key=='r':
-                layers = R()
+                R()
+            if ev.key=='R':
+                R_()
+            if ev.key=='l':
+                L()
+            if ev.key=='L':
+                L_()
+
             if ev.key=='u':
-                layers = U()
-            if ev.key=='t':
-                layers = R()
-            if ev.key=='i':
-                layers = U()
-            if ev.key=='g':
-                layers = R()
-                layers = U()
-                layers = R()
-                layers = U()
+                U()
+            if ev.key=='U':
+                U_()
+            if ev.key=='d':
+                D()
+            if ev.key=='D':
+                D_()
+
+            if ev.key=='f':
+                F()
+            if ev.key=='F':
+                F_()
+            if ev.key=='b':
+                B()
+            if ev.key=='B':
+                B_()
 
