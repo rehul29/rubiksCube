@@ -28,37 +28,50 @@ def free_rotate():
 def recalculateLayers():
     global cube
     global center_loc
+    global axes
+    #print("x-axis = x:",round(axes["x"].x,2)," y:",round(axes["x"].y,2)," z:",round(axes["x"].z,2))
+    #print("y-axis = x:",round(axes["y"].x,2)," y:",round(axes["y"].y,2)," z:",round(axes["y"].z,2))
+    #print("z-axis = x:",round(axes["z"].x,2)," y:",round(axes["z"].y,2)," z:",round(axes["z"].z,2))
+
     layers = {}
     for x in ["R","L","U","D","F","B"]:
         layers[x] = [cube[center_loc[x]]]
-    R_c = round(layers["R"][0].pos.x)
-    L_c = round(layers["L"][0].pos.x)
-    U_c = round(layers["U"][0].pos.y)
-    D_c = round(layers["D"][0].pos.y)
-    F_c = round(layers["F"][0].pos.z)
-    B_c = round(layers["B"][0].pos.z)
-    
+        #print(x,"= x:",round(layers[x][0].pos.x,2)," y:",round(layers[x][0].pos.y,2)," z:",round(layers[x][0].pos.z,2))
+    #for k,v in cube.items():
+    #    print(k,"= x:",round(v.pos.x,2)," y:",round(v.pos.y,2)," z:",round(v.pos.z,2))
+    R_c = layers["R"][0].pos
+    L_c = layers["L"][0].pos
+    U_c = layers["U"][0].pos
+    D_c = layers["D"][0].pos
+    F_c = layers["F"][0].pos
+    B_c = layers["B"][0].pos
+
     for name,comp in cube.items():
-        if(round(comp.pos.x)==R_c):
+        if math.isclose(comp.pos.dot(R_c),1,rel_tol=1e-2):
             layers["R"].append(comp)
-        if(round(comp.pos.x)==L_c):
+        if math.isclose(comp.pos.dot(L_c),1,rel_tol=1e-2):
             layers["L"].append(comp)
-        if(round(comp.pos.y)==U_c):
+        if math.isclose(comp.pos.dot(U_c),1,rel_tol=1e-2):
             layers["U"].append(comp)
-        if(round(comp.pos.y)==D_c):
+        if(math.isclose(comp.pos.dot(D_c),1,rel_tol=1e-2)):
             layers["D"].append(comp)
-        if(round(comp.pos.z)==F_c):
+        if(math.isclose(comp.pos.dot(F_c),1,rel_tol=1e-2)):
             layers["F"].append(comp)
-        if(round(comp.pos.z)==B_c):
+        if(math.isclose(comp.pos.dot(B_c),1,rel_tol=1e-2)):
             layers["B"].append(comp)
+    layers["M"] = list(set(layers["F"] + layers["U"] + layers["B"] + layers["D"]).difference(set(layers["L"])).difference(set(layers["R"])))
+    layers["E"] = list(set(layers["F"] + layers["R"] + layers["B"] + layers["L"]).difference(set(layers["U"])).difference(set(layers["D"])))
+    layers["S"] = list(set(layers["R"] + layers["U"] + layers["L"] + layers["D"]).difference(set(layers["F"])).difference(set(layers["B"])))
     return layers
 
-def rotateLayer(layer, axis, angle=90):
+def rotateLayer(layer, axis, angle=90, origin=None):
+    if not origin:
+        origin=layer[0].pos
     steps = angle//3
     for i in range(steps):
         sleep(0.000000000001)
         for comp in layer:
-            comp.rotate(radians(3), axis = axis, origin=layer[0].pos)
+            comp.rotate(radians(3), axis = axis, origin = origin)
 
 def rotateCube(axis, angle=90):
     global cube
@@ -68,7 +81,7 @@ def rotateCube(axis, angle=90):
         for name, comp in cube.items():
             comp.rotate(angle=radians(3),axis=axis, origin=vector(0,0,0))
 
-def rotation(layer_name, axis):
+def rotation(layer_name, axis, origin=None):
     global layers, axes, cube, center_loc
     ax = ""
     if(len(axis)==1):
@@ -78,7 +91,7 @@ def rotation(layer_name, axis):
            ax = -axes[axis[1]]
         else:
             ax = axes[axis[1]]
-    rotateLayer(layers[layer_name], ax)
+    rotateLayer(layers[layer_name], ax, origin=origin)
     layers = recalculateLayers()
 
 def U():
@@ -93,6 +106,12 @@ def D():
 def D_():
     rotation("D", "-y")
 
+def E():
+    rotation("E", "y", origin = vector(0,0,0))
+
+def E_():
+    rotation("E", "-y", origin = vector(0,0,0))
+
 def R():
     rotation("R", "-x")
 
@@ -105,6 +124,12 @@ def L():
 def L_():
     rotation("L", "-x")
 
+def M():
+    rotation("M", "x", origin = vector(0,0,0))
+
+def M_():
+    rotation("M", "-x", origin = vector(0,0,0))
+
 def F():
     rotation("F", "-z")
 
@@ -112,10 +137,16 @@ def F_():
     rotation("F", "z")
 
 def B():
-    rotation("B", "-z")
+    rotation("B", "z")
 
 def B_():
-    rotation("B", "z")
+    rotation("B", "-z")
+
+def S():
+    rotation("S", "z", origin = vector(0,0,0))
+
+def S_():
+    rotation("S", "-z", origin = vector(0,0,0))
 
 def generateCube(cubelet_size):
     #centers
@@ -240,6 +271,9 @@ def showBack():
     showTop()
 
 if __name__=="__main__":
+    scene2 = canvas(title="The Rubik's Cube", x=0, y=0, width=1000, height=500, center=vector(0,0,0), background=vector(0,0,0))
+    scene2.camera.pos = vector(0,0,3)
+    scene2.select()
     cubelet_size = 0.9
 
     #global
@@ -262,7 +296,7 @@ if __name__=="__main__":
         "D":"w_c"
     }
     label_pos = {
-        "x_loc": -3,
+        "x_loc": -5,
         "top": 2,
         "right": 1,
         "left": 0,
@@ -271,31 +305,31 @@ if __name__=="__main__":
     }
 
     generateLabels()
-    #for name,comp in cube.items():
-    #    comp.rotate(angle=radians(45),axis=vector(0,-1,0), origin=vector(0,0,0))
-    #    comp.rotate(angle=radians(45),axis=vector(1,0,0), origin=vector(0,0,0))
-    #for k,v in axes.items():
-    #    axes[k] = v.rotate(angle=radians(45),axis=vector(0,-1,0))
+    for name,comp in cube.items():
+        comp.rotate(angle=radians(45),axis=vector(0,-1,0), origin=vector(0,0,0))
+        comp.rotate(angle=radians(20),axis=vector(1,0,0), origin=vector(0,0,0))
+    for k,v in axes.items():
+        axes[k] = v.rotate(angle=radians(45),axis=vector(0,-1,0))
 
-    #for k,v in axes.items():
-    #    axes[k] = v.rotate(angle=radians(45),axis=vector(1,0,0))
+    for k,v in axes.items():
+        axes[k] = v.rotate(angle=radians(20),axis=vector(1,0,0))
 
     layers = recalculateLayers()
     #free_rotate(cube)
     
     while True:
-        ev = scene.waitfor('click keydown')
+        ev = scene2.waitfor('click keydown')
         if ev.event == 'click':
             if ev.pos.x < label_pos["x_loc"]+1 and ev.pos.x > label_pos["x_loc"]-1:
-                if ev.pos.y < label_pos["top"]+0.3 and ev.pos.y > label_pos["top"]-0.3:
+                if ev.pos.y < label_pos["top"]+0.5 and ev.pos.y > label_pos["top"]-0.5:
                     showTop()
-                if ev.pos.y < label_pos["right"]+0.3 and ev.pos.y > label_pos["right"]-0.3:
+                if ev.pos.y < label_pos["right"]+0.5 and ev.pos.y > label_pos["right"]-0.5:
                     showRight()
-                if ev.pos.y < label_pos["left"]+0.3 and ev.pos.y > label_pos["left"]-0.3:
+                if ev.pos.y < label_pos["left"]+0.5 and ev.pos.y > label_pos["left"]-0.5:
                     showLeft()
-                if ev.pos.y < label_pos["bottom"]+0.3 and ev.pos.y > label_pos["bottom"]-0.3:
+                if ev.pos.y < label_pos["bottom"]+0.5 and ev.pos.y > label_pos["bottom"]-0.5:
                     showBottom()
-                if ev.pos.y < label_pos["back"]+0.3 and ev.pos.y > label_pos["back"]-0.3:
+                if ev.pos.y < label_pos["back"]+0.5 and ev.pos.y > label_pos["back"]-0.5:
                     showBack()
         else:
             if ev.key=='r':
@@ -306,7 +340,10 @@ if __name__=="__main__":
                 L()
             if ev.key=='L':
                 L_()
-
+            if ev.key=='m':
+                M()
+            if ev.key=='M':
+                M_()
             if ev.key=='u':
                 U()
             if ev.key=='U':
@@ -315,7 +352,10 @@ if __name__=="__main__":
                 D()
             if ev.key=='D':
                 D_()
-
+            if ev.key=='e':
+                E()
+            if ev.key=='E':
+                E_()
             if ev.key=='f':
                 F()
             if ev.key=='F':
@@ -324,4 +364,9 @@ if __name__=="__main__":
                 B()
             if ev.key=='B':
                 B_()
+            if ev.key=='s':
+                S()
+            if ev.key=='S':
+                S_()
+            
 
